@@ -1,0 +1,19 @@
+{
+  "name": "scannerapi-real-secure",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "hash-password": "node scripts/hash-password.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "firebase-admin": "^14.3.0",
+    "mongodb": "^7.6.0",
+    "mysql2": "^3.24.2",
+    "qrcode": "^1.5.4",
+    "redis": "^6.2.1"
+  }
+}

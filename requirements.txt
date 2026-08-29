@@ -1,0 +1,2 @@
+# This project is Node.js/Express; Python packages are not required.
+# Use package.json + npm install instead.

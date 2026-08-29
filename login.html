@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>ScannerAPI — Secure Admin Login</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{--primary:#ff0040;--bg:#050505;--card:rgba(10,10,10,.72);--border:rgba(255,0,64,.3)}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:var(--bg);color:#eee;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-x:hidden}
+#bg{position:fixed;inset:0;z-index:-1}.wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}.box{width:100%;max-width:540px;background:var(--card);border:1px solid var(--border);backdrop-filter:blur(15px);border-radius:18px;box-shadow:0 0 40px rgba(0,0,0,.55);padding:28px}.title{font-size:clamp(2rem,8vw,3.4rem);font-weight:800;color:var(--primary);text-shadow:0 0 10px var(--primary),0 0 25px var(--primary)}.sub{color:#9ca3af}.input{width:100%;padding:14px 16px;border-radius:12px;border:1px solid var(--border);background:rgba(0,0,0,.45);color:#fff;margin-top:12px}.input:focus{outline:none;box-shadow:0 0 0 3px rgba(255,0,64,.15);border-color:var(--primary)}button{width:100%;padding:13px 16px;border-radius:12px;border:1px solid var(--primary);background:var(--primary);color:white;font-weight:800;cursor:pointer;margin-top:12px}button:disabled{opacity:.55;cursor:not-allowed}.secondary{background:transparent;color:#bbb;border-color:#555}.alert{display:none;margin-top:12px;padding:12px;border-radius:12px}.alert.show{display:block}.ok{background:rgba(0,255,0,.08);border:1px solid rgba(0,255,0,.25);color:#86efac}.err{background:rgba(255,0,0,.08);border:1px solid rgba(255,0,0,.25);color:#fca5a5}.info{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);color:#93c5fd}.hidden{display:none}.qr{display:block;max-width:220px;width:100%;margin:15px auto;border-radius:12px;background:#fff;padding:8px}.small{font-size:12px;color:#9ca3af}.danger{color:#ff557e}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div class="wrap"><div class="box">
+  <div class="text-center">
+    <div class="title">ANSH AFT 🔥</div>
+    <div class="sub mt-2">SCANNERAPI // SECURE ADMIN</div>
+  </div>
+
+  <form id="loginForm" class="mt-6">
+    <input id="username" class="input" placeholder="[ 👤 ENTER USERNAME ]" autocomplete="username" required />
+    <input id="password" class="input" type="password" placeholder="[ 🔒 ENTER PASSWORD ]" autocomplete="current-password" required />
+    <button id="loginBtn" type="submit">[ 🚀 LOGIN ]</button>
+  </form>
+
+  <div id="loginAlert" class="alert"></div>
+
+  <div id="otpPanel" class="hidden mt-6">
+    <h2 class="text-lg font-bold">🔐 Two-Factor Verification</h2>
+    <p class="small mt-2">2FA is enabled on the server. Enter the current 6-digit authenticator code, or use one unused backup code.</p>
+    <input id="otp" class="input" inputmode="numeric" maxlength="6" placeholder="123456" />
+    <input id="backup" class="input" placeholder="Backup code (optional)" />
+    <button id="verifyBtn">[ ✅ VERIFY & LOGIN ]</button>
+    <button id="backBtn" class="secondary">[ ← BACK ]</button>
+  </div>
+
+  <p class="small mt-6 text-center">Server-side authentication • HttpOnly session • TOTP • IP policy</p>
+</div></div>
+<script>
+(function(){
+  const canvas=document.getElementById('bg'),scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,1000),renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
+  renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));camera.position.z=30;
+  const g=new THREE.BufferGeometry(),count=1200,pos=new Float32Array(count*3);for(let i=0;i<pos.length;i++)pos[i]=(Math.random()-.5)*100;g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const m=new THREE.PointsMaterial({size:.18,color:0xff0040,transparent:true,opacity:.55});const p=new THREE.Points(g,m);scene.add(p);
+  (function animate(){requestAnimationFrame(animate);p.rotation.x+=.0003;p.rotation.y+=.0005;renderer.render(scene,camera)})();
+  addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+})();
+const $=id=>document.getElementById(id);
+function alertMsg(msg,type='info'){const el=$('loginAlert');el.textContent=msg;el.className='alert show '+(type==='success'?'ok':type==='error'?'err':'info')}
+function busy(btn,busy,text){btn.disabled=busy;btn.textContent=busy?'[ PLEASE WAIT ]':text}
+async function post(url,body){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const data=await r.json().catch(()=>({ok:false,error:'INVALID_SERVER_RESPONSE'}));if(!r.ok)throw Object.assign(new Error(data.error||'REQUEST_FAILED'),{status:r.status,data});return data}
+let challengeToken='';
+$('loginForm').addEventListener('submit',async e=>{
+ e.preventDefault(); const btn=$('loginBtn'); busy(btn,true,'[ 🚀 LOGIN ]');
+ try{const data=await post('/api/admin/login',{username:$('username').value.trim(),password:$('password').value});
+   if(data.requires_2fa){challengeToken=data.challenge_token;$('loginForm').classList.add('hidden');$('otpPanel').classList.remove('hidden');alertMsg('🔐 Password accepted. 2FA verification is required.','info');$('otp').focus();}
+   else{alertMsg('✅ Login successful. Redirecting...','success');location.href=data.redirect||'/dashboard.html'}
+ }catch(err){if(err.status===403&&err.data?.error==='IP_NOT_ALLOWED'){location.href='/404.html';return} alertMsg('❌ '+(err.data?.error||err.message),'error')}
+ finally{busy(btn,false,'[ 🚀 LOGIN ]')}
+});
+$('verifyBtn').addEventListener('click',async()=>{
+ const btn=$('verifyBtn');busy(btn,true,'[ ✅ VERIFY & LOGIN ]');
+ try{const data=await post('/api/admin/login/2fa',{challenge_token:challengeToken,code:$('otp').value.trim(),backup_code:$('backup').value.trim()});alertMsg('✅ 2FA verified. Redirecting...','success');location.href=data.redirect||'/dashboard.html'}
+ catch(err){if(err.status===403&&err.data?.error==='IP_NOT_ALLOWED'){location.href='/404.html';return}alertMsg('❌ '+(err.data?.error||err.message),'error')}
+ finally{busy(btn,false,'[ ✅ VERIFY & LOGIN ]')}
+});
+$('backBtn').addEventListener('click',()=>{challengeToken='';$('otpPanel').classList.add('hidden');$('loginForm').classList.remove('hidden');alertMsg('Enter your credentials again.','info')});
+(async()=>{try{const r=await fetch('/api/admin/me');if(r.ok)location.href='/dashboard.html'}catch{}})();
+</script>
+</body></html>
