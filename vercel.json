@@ -1,9 +1,14 @@
 {
   "version": 2,
   "builds": [
-    { "src": "server.js", "use": "@vercel/node" }
+    { "src": "server.js", "use": "@vercel/node" },
+    { "src": "*.html", "use": "@vercel/static" },
+    { "src": "*.ico", "use": "@vercel/static" }
   ],
   "routes": [
+    { "src": "/login.html", "dest": "/login.html" },
+    { "src": "/dashboard.html", "dest": "/dashboard.html" },
+    { "src": "/favicon.ico", "dest": "/favicon.ico" },
     { "src": "/(.*)", "dest": "server.js" }
   ]
 }
